@@ -10,6 +10,7 @@ public class BasicServer {
   public static void main(String[] args) throws IOException, InterruptedException {
 		Server basicServer = ServerBuilder
 				.forPort(ServerConstants.PORT)
+				.addService(new BasicServerImpl())
 				.build();
 
 		basicServer.start();
