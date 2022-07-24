@@ -1,20 +1,19 @@
 package server;
 
+import config.ServerConstants;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 
 import java.io.IOException;
 
 public class BasicServer {
-	private static final int PORT = 50051;
-
   public static void main(String[] args) throws IOException, InterruptedException {
 		Server basicServer = ServerBuilder
-				.forPort(PORT)
+				.forPort(ServerConstants.PORT)
 				.build();
 
 		basicServer.start();
-    System.out.println("Server started. Listening on port: " + PORT);
+    System.out.println("Server started. Listening on port: " + ServerConstants.PORT);
 
     Runtime.getRuntime()
         .addShutdownHook(
