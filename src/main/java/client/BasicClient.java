@@ -9,13 +9,14 @@ import config.ServerConstants;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class BasicClient {
 
 	private static void doSyncGreetOnce(ManagedChannel channel, String message) {
-    System.out.println("Doing Sync Greet");
+    System.out.println("Doing Sync Greet once");
 		GreetingServiceBlockingStub stub = GreetingServiceGrpc.newBlockingStub(channel);
 
 		GreetingRequest request = GreetingRequest.newBuilder()
@@ -27,7 +28,7 @@ public class BasicClient {
 	}
 
 	private static void doAsyncGreetOnce(ManagedChannel channel, String message) throws ExecutionException, InterruptedException {
-		System.out.println("Doing Async Greet");
+		System.out.println("Doing Async Greet once");
 		GreetingServiceFutureStub stub = GreetingServiceGrpc.newFutureStub(channel);
 
 		GreetingRequest request = GreetingRequest.newBuilder()
@@ -36,6 +37,20 @@ public class BasicClient {
 
 		final Future<GreetingResponse> response = stub.greet(request);
 		System.out.println("Greeting: " + response.get().getResult()); // blocking get
+	}
+
+	private static void doSyncGreetOnceForManyResponses(ManagedChannel channel, String message) {
+		System.out.println("Doing Sync Greet once; expecting multiple responses...");
+		GreetingServiceBlockingStub stub = GreetingServiceGrpc.newBlockingStub(channel);
+
+		GreetingRequest request = GreetingRequest.newBuilder()
+				.setName(message)
+				.build();
+
+		Iterator<GreetingResponse> response = stub.greetManyTimes(request);
+    response.forEachRemaining(
+        r -> System.out.println("Greeting: " + r.getResult())
+		);
 	}
 
 	public static void main(String[] args) throws ExecutionException, InterruptedException {
@@ -54,11 +69,12 @@ public class BasicClient {
 		switch (args[0]) {
 			case "syncGreetOnce": doSyncGreetOnce(channel, args[1]); break;
 			case "asyncGreetOnce": doAsyncGreetOnce(channel, args[1]); break;
+			case "syncGreetServerStreaming": doSyncGreetOnceForManyResponses(channel, args[1]); break;
 			default:
         System.out.println(
             "Invalid Argument "
                 + args[0]
-                + "\nWas expecting one of {'syncGreetOnce','asyncGreetOnce'}");
+                + "\nWas expecting one of {'syncGreetOnce','asyncGreetOnce','syncGreetServerStreaming'}");
     }
 
 		channel.shutdown();
