@@ -24,4 +24,7 @@ service GreetingService {
 
   // Client-side Streaming
   rpc repeatedGreet(stream GreetingRequest) returns (GreetingResponse);
+
+  // Bi-directional Streaming
+  rpc greetEveryone(stream GreetingRequest) returns (stream GreetingResponse);
 }

@@ -61,12 +61,12 @@ public class BasicClient {
 
 	private static void doStreamGreet(ManagedChannel channel, List<String> messages) throws InterruptedException {
 		System.out.println("Doing Async Greet many times");
-		GreetingServiceStub stub = GreetingServiceGrpc.newStub(channel);
+		GreetingServiceStub stub = GreetingServiceGrpc.newStub(channel); // asyncStub
 
 		/* Client Streaming is an asynchronous communication with the service.
-		 * Client needs a latch to wait on, till it completes streaming its requests,
-		 * and the service processes and sends the response; else this client thread
-		 * would complete executing this method without waiting to receive the response. */
+		 * Client needs a latch to wait on, till the service completes processing all
+		 * the requests and sends the response; else this client thread would complete
+		 * executing this method and exit without waiting to receive the response. */
 		CountDownLatch latch = new CountDownLatch(1);
 
     StreamObserver<GreetingRequest> requestStream =
@@ -107,6 +107,54 @@ public class BasicClient {
 		latch.await(3, TimeUnit.SECONDS);
 	}
 
+	private static void doBiStreamGreet(ManagedChannel channel , List<String> messages) throws InterruptedException {
+		System.out.println("Doing Async Greet many times, and expecting many responses.");
+		GreetingServiceStub stub = GreetingServiceGrpc.newStub(channel); // asyncStub
+
+		/* Bidirectional Streaming is an asynchronous communication with the service.
+		 * Client needs a latch to wait on, till the service completes processing all
+		 * the requests and sends the response; else this client thread would complete
+		 * executing this method and exit without waiting to receive the response. */
+		CountDownLatch latch = new CountDownLatch(1);
+
+		StreamObserver<GreetingRequest> requestStream =
+				stub.greetEveryone(
+						new StreamObserver<>() {
+							@Override
+							public void onNext(GreetingResponse greetingResponse) {
+								/* The difference between Client Streaming and Bi-Streaming is that
+								 * in Client Streaming, the server sends only one response at the end.
+								 * So, it does not send any response on every next stream observation.
+								 * But im Bi-Streaming, it does.*/
+								System.out.println("Next response:\n" + greetingResponse.getResult());
+							}
+
+							@Override
+							public void onError(Throwable throwable) {
+								// will handle errors later
+							}
+
+							@Override
+							public void onCompleted() {
+								// Completed streaming requests to service; done waiting on latch.
+								latch.countDown();
+							}
+						});
+
+		for (String message : messages) {
+			requestStream.onNext(GreetingRequest.newBuilder()
+					.setName(message)
+					.build());
+		}
+
+		/* Unless the client completes observing this stream (by invoking onComplete()
+		 * on this stream), service won't send the aggregate response in this case. */
+		requestStream.onCompleted();
+
+		// Wait (upto x timeunits) for latch to count down to 0.
+		latch.await(3, TimeUnit.SECONDS);
+	}
+
 	public static void main(String[] args) throws ExecutionException, InterruptedException {
 		if (args.length < 2) {
       System.out.println("Not enough arguments provided.");
@@ -127,12 +175,15 @@ public class BasicClient {
 			case "greetClientStreaming":
         doStreamGreet(channel, Arrays.asList(args).subList(1, args.length));
         break;
+			case "greetBiStreaming":
+				doBiStreamGreet(channel, Arrays.asList(args).subList(1, args.length));
+				break;
 			default:
         System.out.println(
             "Invalid Argument "
                 + args[0]
                 + "\nWas expecting one of {'syncGreetOnce','asyncGreetOnce'," +
-								"'syncGreetServerStreaming', 'greetClientStreaming'}");
+								"'syncGreetServerStreaming', 'greetClientStreaming', greetBiStreaming}");
     }
 
 		channel.shutdown();

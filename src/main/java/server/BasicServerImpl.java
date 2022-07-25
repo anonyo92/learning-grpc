@@ -66,4 +66,30 @@ public class BasicServerImpl extends GreetingServiceImplBase {
       }
     };
 	}
+
+	@Override
+	public StreamObserver<GreetingRequest> greetEveryone(
+			StreamObserver<GreetingResponse> responseStreamObserver) {
+
+    return new StreamObserver<>() {
+			@Override
+			public void onNext(GreetingRequest greetingRequest) {
+				GreetingResponse response = GreetingResponse.newBuilder()
+						.setResult("Hello " + greetingRequest.getName())
+						.build();
+				// will receive the request and send response on every observation
+				responseStreamObserver.onNext(response);
+			}
+
+			@Override
+			public void onError(Throwable throwable) {
+				responseStreamObserver.onError(throwable);
+			}
+
+			@Override
+			public void onCompleted() {
+				responseStreamObserver.onCompleted();
+			}
+		};
+	}
 }
