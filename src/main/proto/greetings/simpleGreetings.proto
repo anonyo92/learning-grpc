@@ -21,4 +21,7 @@ service GreetingService {
 
   // Server-side Streaming
   rpc greetManyTimes(GreetingRequest) returns (stream GreetingResponse);
+
+  // Client-side Streaming
+  rpc repeatedGreet(stream GreetingRequest) returns (GreetingResponse);
 }

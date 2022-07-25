@@ -29,4 +29,41 @@ public class BasicServerImpl extends GreetingServiceImplBase {
 		}
 		responseObserver.onCompleted();
 	}
+
+	@Override
+	/* The StreamObserver<GreetingRequest> return-type is returned so that
+	 * when the client stub RPC's this method, it gets a stream to observe
+	 * while it feeds requests to that stream */
+	public StreamObserver<GreetingRequest> repeatedGreet(
+			StreamObserver<GreetingResponse> responseObserver) {
+		System.out.println("Going to receive many greeting requests\n\t");
+		System.out.println("Will send one greeting...");
+
+		StringBuilder sb = new StringBuilder();
+
+    return new StreamObserver<>() {
+      @Override
+      public void onNext(GreetingRequest greetingRequest) {
+				// will receive the request, but not respond now; only keep aggregating.
+				System.out.println("Received greeting request\n\t" + greetingRequest.toString());
+        sb.append("Hello ").append(greetingRequest.getName()).append("!\n");
+      }
+
+      @Override
+      public void onError(Throwable throwable) {
+        responseObserver.onError(throwable);
+      }
+
+      @Override
+      public void onCompleted() {
+        System.out.println("Aggregating response");
+        GreetingResponse response = GreetingResponse.newBuilder()
+						.setResult(sb.toString())
+						.build();
+				// Send one aggregated response
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+      }
+    };
+	}
 }
