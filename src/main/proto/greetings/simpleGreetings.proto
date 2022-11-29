@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package example.grpc.greetings;
+
+option java_package = "com.example.grpc.greetings";
+option java_multiple_files = true;
+
+message GreetingRequest {
+  string name = 1;
+}
+
+
+message GreetingResponse {
+  string result = 1;
+}
+
+
+service GreetingService {
+  // Unary Client-Server
+  rpc greet(GreetingRequest) returns (GreetingResponse);
+
+  // Server-side Streaming
+  rpc greetManyTimes(GreetingRequest) returns (stream GreetingResponse);
+
+  // Client-side Streaming
+  rpc repeatedGreet(stream GreetingRequest) returns (GreetingResponse);
+
+  // Bi-directional Streaming
+  rpc greetEveryone(stream GreetingRequest) returns (stream GreetingResponse);
+}
